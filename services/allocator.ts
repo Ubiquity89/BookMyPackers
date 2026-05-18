@@ -17,11 +17,7 @@ export async function allocateLead(
   let retryCount = 0;
 
   while (retryCount < maxRetries) {
-    const session = await mongoose.startSession();
-
     try {
-      session.startTransaction();
-
       const assignedProviders: number[] = [];
 
       // STEP 1 — Mandatory Providers
@@ -32,7 +28,7 @@ export async function allocateLead(
       for (const providerNumber of mandatoryProviders) {
         const provider = await Provider.findOne({
           name: `Provider ${providerNumber}`,
-        }).session(session);
+        });
 
         if (
           provider &&
@@ -40,19 +36,15 @@ export async function allocateLead(
         ) {
           assignedProviders.push(providerNumber);
 
-          await Assignment.create(
-            [
-              {
-                leadId,
-                providerId: provider._id,
-              },
-            ],
-            { session }
+          await Assignment.create({
+            leadId,
+            providerId: provider._id,
+          });
+
+          await Provider.findByIdAndUpdate(
+            provider._id,
+            { $inc: { leadsAssigned: 1 } }
           );
-
-          provider.leadsAssigned += 1;
-
-          await provider.save({ session });
         }
       }
 
@@ -64,10 +56,17 @@ export async function allocateLead(
         const pool =
           FAIR_DISTRIBUTION_POOLS[serviceType] || [];
 
-        const allocationState =
+        let allocationState =
           await AllocationState.findOne({
             serviceType,
-          }).session(session);
+          });
+
+        if (!allocationState) {
+          allocationState = await AllocationState.create({
+            serviceType,
+            currentIndex: 0,
+          });
+        }
 
         let currentIndex = allocationState.currentIndex;
 
@@ -94,7 +93,7 @@ export async function allocateLead(
 
           const provider = await Provider.findOne({
             name: `Provider ${providerNumber}`,
-          }).session(session);
+          });
 
           if (
             provider &&
@@ -102,34 +101,29 @@ export async function allocateLead(
           ) {
             assignedProviders.push(providerNumber);
 
-            await Assignment.create(
-              [
-                {
-                  leadId,
-                  providerId: provider._id,
-                },
-              ],
-              { session }
+            await Assignment.create({
+              leadId,
+              providerId: provider._id,
+            });
+
+            await Provider.findByIdAndUpdate(
+              provider._id,
+              { $inc: { leadsAssigned: 1 } }
             );
-
-            provider.leadsAssigned += 1;
-
-            await provider.save({ session });
 
             added++;
           }
         }
 
-        allocationState.currentIndex = currentIndex;
-
-        await allocationState.save({ session });
+        await AllocationState.findOneAndUpdate(
+          { serviceType },
+          { currentIndex }
+        );
 
         // STEP 3 — Fallback Allocation
 
         if (assignedProviders.length < 3) {
-          const allProviders = await Provider.find().session(
-            session
-          );
+          const allProviders = await Provider.find();
 
           for (const provider of allProviders) {
             const providerNumber = Number(
@@ -153,19 +147,15 @@ export async function allocateLead(
 
             assignedProviders.push(providerNumber);
 
-            await Assignment.create(
-              [
-                {
-                  leadId,
-                  providerId: provider._id,
-                },
-              ],
-              { session }
+            await Assignment.create({
+              leadId,
+              providerId: provider._id,
+            });
+
+            await Provider.findByIdAndUpdate(
+              provider._id,
+              { $inc: { leadsAssigned: 1 } }
             );
-
-            provider.leadsAssigned += 1;
-
-            await provider.save({ session });
 
             if (assignedProviders.length === 3) {
               break;
@@ -174,14 +164,15 @@ export async function allocateLead(
         }
       }
 
-      await session.commitTransaction();
-
       return assignedProviders;
     } catch (error: any) {
-      await session.abortTransaction();
-
-      // Check if it's a write conflict error
-      if (error.message?.includes('Write conflict') && retryCount < maxRetries - 1) {
+      // Check if it's a write conflict or duplicate key error
+      if (
+        (error.message?.includes('Write conflict') ||
+         error.code === 11000 ||
+         error.message?.includes('duplicate')) &&
+        retryCount < maxRetries - 1
+      ) {
         retryCount++;
         // Exponential backoff: 100ms, 200ms, 400ms, 800ms
         const delay = Math.pow(2, retryCount) * 100;
@@ -190,8 +181,6 @@ export async function allocateLead(
       }
 
       throw error;
-    } finally {
-      session.endSession();
     }
   }
 
