@@ -10,6 +10,19 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    // Validate required fields
+    if (!body.phone || !body.serviceType) {
+      return Response.json(
+        {
+          success: false,
+          message: "Phone and serviceType are required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const lead = await Lead.create(body);
 
     const assignedProviders =
@@ -31,7 +44,19 @@ export async function POST(req: Request) {
         {
           success: false,
           message:
-            "Duplicate lead for same service",
+            "Duplicate lead: This phone number already has a request for this service type",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (error.name === 'ValidationError') {
+      return Response.json(
+        {
+          success: false,
+          message: error.message,
         },
         {
           status: 400,

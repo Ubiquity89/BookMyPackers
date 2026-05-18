@@ -4,7 +4,7 @@ export async function POST() {
 
     for (let i = 0; i < 10; i++) {
       promises.push(
-        fetch("http://localhost:3000/api/leads", {
+        fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/leads`, {
           method: "POST",
 
           headers: {
