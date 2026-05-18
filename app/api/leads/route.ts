@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import Lead from "@/models/Lead";
 import { allocateLead } from "@/services/allocator";
@@ -16,26 +15,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Use a session to ensure Lead creation and Allocator are treated as an single, inseparable block
-    const session = await mongoose.startSession();
-    let assignedProviders: number[] = [];
-    let lead;
+    const lead = await Lead.create(body);
 
-    try {
-      await session.withTransaction(async () => {
-        // Create the lead tied directly to the current session block
-        const [newLead] = await Lead.create([body], { session });
-        lead = newLead;
-
-        // Run the atomic allocation logic
-        assignedProviders = await allocateLead(
-          lead._id.toString(),
-          lead.serviceType
-        );
-      });
-    } finally {
-      await session.endSession();
-    }
+    const assignedProviders = await allocateLead(
+      lead._id.toString(),
+      lead.serviceType
+    );
 
     return Response.json({
       success: true,
@@ -65,7 +50,7 @@ export async function POST(req: Request) {
     }
 
     return Response.json(
-      { success: false, message: "Internal server error occurred" },
+      { success: false, message: error.message || "Internal server error occurred" },
       { status: 500 }
     );
   }
