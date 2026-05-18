@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function RequestServicePage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -11,8 +13,8 @@ export default function RequestServicePage() {
     description: "",
   });
 
-  const [message, setMessage] =
-    useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(
     e: React.FormEvent
@@ -20,33 +22,45 @@ export default function RequestServicePage() {
     e.preventDefault();
 
     setMessage("");
+    setLoading(true);
 
-    const res = await fetch("/api/leads", {
-      method: "POST",
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
 
-      headers: {
-        "Content-Type": "application/json",
-      },
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-      body: JSON.stringify(formData),
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      setMessage(
-        "Lead submitted successfully"
-      );
-
-      setFormData({
-        name: "",
-        phone: "",
-        city: "",
-        serviceType: "Service 1",
-        description: "",
+        body: JSON.stringify(formData),
       });
-    } else {
-      setMessage(data.message);
+
+      const data = await res.json();
+
+      if (data.success) {
+        setMessage(
+          "Lead submitted successfully"
+        );
+
+        setFormData({
+          name: "",
+          phone: "",
+          city: "",
+          serviceType: "Service 1",
+          description: "",
+        });
+
+        // Redirect to dashboard after successful submission
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1000);
+      } else {
+        setMessage(data.message);
+      }
+    } catch (error) {
+      setMessage("Error submitting request");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -158,9 +172,10 @@ export default function RequestServicePage() {
 
           <button
             type="submit"
-            className="w-full bg-black text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition"
+            disabled={loading}
+            className="w-full bg-black text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Request
+            {loading ? "Submitting..." : "Submit Request"}
           </button>
         </form>
 
