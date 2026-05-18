@@ -1,0 +1,114 @@
+# BookMyPackers - Mini Lead Distribution System
+
+A full-stack lead distribution system built with Next.js, React, and MongoDB. This system manages service requests from customers and distributes them to service providers based on allocation rules.
+
+## Features
+
+- **Customer Form**: Submit service requests with details like name, phone, service type, and city
+- **Provider Dashboard**: View assigned leads, remaining quota, and provider statistics
+- **Test Tools**: Webhook testing and concurrency testing utilities
+- **Real-time Updates**: Dashboard auto-refreshes every 3 seconds
+- **Lead Allocation**: Intelligent distribution of leads to providers based on availability and quota
+
+## Tech Stack
+
+- **Frontend**: Next.js 16.2.6, React 19.2.4
+- **Styling**: Tailwind CSS 4
+- **Database**: MongoDB with Mongoose 8.24.0
+- **Language**: TypeScript 5
+
+## Project Structure
+
+```
+├── app/
+│   ├── api/
+│   │   ├── dashboard/    # Dashboard data endpoint
+│   │   ├── leads/        # Lead submission endpoint
+│   │   ├── seed/         # Database seeding utilities
+│   │   ├── webhook/      # Webhook handler
+│   │   └── test/         # Testing endpoints
+│   ├── dashboard/        # Provider dashboard page
+│   ├── request-service/  # Customer form page
+│   └── test-tools/       # Testing utilities page
+├── models/               # MongoDB schemas (Provider, Lead, Assignment, etc.)
+├── services/             # Business logic (allocator service)
+└── lib/                  # Database connection and constants
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- MongoDB instance (local or cloud)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Ubiquity89/BookMyPackers.git
+cd BookMyPackers
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables (create `.env.local`):
+```
+MONGODB_URI=mongodb://localhost:27017/bookmypackers
+```
+
+4. Run the development server:
+```bash
+npm run dev
+```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Usage
+
+### 1. Customer Form
+Navigate to `/request-service` to submit a new service request. Fill in the required fields:
+- Name
+- Phone number
+- Service type
+- City
+
+### 2. Provider Dashboard
+Navigate to `/dashboard` to view:
+- All providers and their assigned leads
+- Remaining quota for each provider
+- Lead details and status
+
+### 3. Test Tools
+Navigate to `/test-tools` to:
+- Test webhook endpoints
+- Test concurrent request handling
+- Seed test data
+
+## API Endpoints
+
+- `GET /api/dashboard` - Fetch dashboard data with provider allocations
+- `POST /api/leads` - Submit a new lead
+- `POST /api/webhook` - Handle webhook events
+- `POST /api/seed` - Seed database with test data
+
+## Database Models
+
+- **Provider**: Service providers with quota limits
+- **Lead**: Customer service requests
+- **Assignment**: Lead-to-provider mappings
+- **AllocationState**: System state tracking
+
+## Build for Production
+
+```bash
+npm run build
+npm start
+```
+
+## License
+
+This project is a full-stack developer assignment.
