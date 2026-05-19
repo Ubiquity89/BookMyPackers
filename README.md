@@ -7,7 +7,7 @@ Focusing strictly on production-grade backend engineering correctness, this syst
 ---
 
 ## 🌐 Live Deployment
-- **Live Demo URL**: [Insert your deployed Vercel link here, e.g., https://book-my-packers.vercel.app]
+- **Live Demo URL**: https://book-my-packers-ten.vercel.app/
 - **GitHub Repository**: `https://github.com/Ubiquity89/BookMyPackers.git`
 
 ---
